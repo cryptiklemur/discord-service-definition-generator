@@ -127,23 +127,20 @@ app.get('/', async(req, res) => {
     }
 });
 
-(async () => console.log(JSON.stringify(await main(), null, 4)))();
-/*
- const server           = app.listen(port, () => console.log("Listening on http://localhost:" + port)),
- gracefulShutdown = function () {
- console.log("Received kill signal, shutting down gracefully.");
- server.close(() => {
- console.log("Closed out remaining connections.");
- process.exit(0)
- });
- 
- // if after
- setTimeout(function () {
- console.error("Could not close connections in time, forcefully shutting down");
- process.exit(1)
- }, 10 * 1000);
- };
- 
- process.on('SIGTERM', gracefulShutdown);
- process.on('SIGINT', gracefulShutdown);
- //*/
+const server           = app.listen(port, () => console.log("Listening on http://localhost:" + port)),
+gracefulShutdown = function () {
+console.log("Received kill signal, shutting down gracefully.");
+server.close(() => {
+console.log("Closed out remaining connections.");
+process.exit(0)
+});
+
+// if after
+setTimeout(function () {
+console.error("Could not close connections in time, forcefully shutting down");
+process.exit(1)
+}, 10 * 1000);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
