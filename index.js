@@ -135,6 +135,5 @@ const server           = app.listen(port, () => console.log("Listening on http:/
           }, 10 * 1000);
       };
 
-process.on('SIGKILL', gracefulShutdown);
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
