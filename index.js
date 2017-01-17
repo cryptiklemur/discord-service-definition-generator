@@ -2,7 +2,7 @@ const request = require('request-promise'),
       cheerio = require('cheerio'),
       express = require('express'),
       app     = express(),
-      port    = process.env.port || 3000;
+      port    = process.env.PORT || 3000;
 
 const snowflakes = ['channel.id', 'guild.id', 'message.id', 'user.id'];
 
