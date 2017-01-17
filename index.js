@@ -46,14 +46,22 @@ async function getOperations(category, $) {
           meRegex    = /\[email\sprotected.*$/g;
     
     $('.http-req').each((index, element) => {
-        const operation   = $(element),
-              key         = operation.find('.http-req-title').attr('id').replace(/-([a-z])/g, g => g[1].toUpperCase()),
-              description = operation.next('span').text(),
+        const operation = $(element),
+              temp      = cheerio.load("<div class='temp'></div>"),
+              items     = temp('.temp');
+        
+        operation.nextUntil('.http-req').map((i, e) => {
+            items.append($(e));
+        }).get();
+        
+        const key         = operation.find('.http-req-title').attr('id').replace(/-([a-z])/g, g => g[1].toUpperCase()),
+              description = (items.find('span') || {text: () => ""}).text(),
               name        = operation.find('.http-req-title').text(),
               method      = operation.find('.http-req-verb').text().split('/')[0],
               url         = operation.find('.http-req-url').text().replace(meRegex, '/@me'),
-              parameters  = getJsonParams($, operation);
+              parameters  = getJsonParams($, operation, items);
         
+        //console.log(name, items.find('#json-params').length);
         
         let match = regex.exec(url);
         while (match !== null) {
@@ -75,11 +83,10 @@ async function getOperations(category, $) {
     return operations;
 }
 
-function getJsonParams($, operation) {
-    const parameters  = {},
-          description = operation.next('span'),
-          jsonParams  = description.length === 1 ? description.next('h6') : operation.next('h6'),
-          table       = jsonParams.length === 1 ? jsonParams.next('table') : undefined;
+function getJsonParams($, operation, items) {
+    const parameters = {},
+          table      = items.find('#json-params').length === 1 ? items.find('table') : undefined;
+    
     
     if (!table) {
         return parameters;
@@ -120,20 +127,23 @@ app.get('/', async(req, res) => {
     }
 });
 
-const server           = app.listen(port, () => console.log("Listening on http://localhost:" + port)),
-      gracefulShutdown = function () {
-          console.log("Received kill signal, shutting down gracefully.");
-          server.close(() => {
-              console.log("Closed out remaining connections.");
-              process.exit(0)
-          });
-    
-          // if after
-          setTimeout(function () {
-              console.error("Could not close connections in time, forcefully shutting down");
-              process.exit(1)
-          }, 10 * 1000);
-      };
-
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+(async () => console.log(JSON.stringify(await main(), null, 4)))();
+/*
+ const server           = app.listen(port, () => console.log("Listening on http://localhost:" + port)),
+ gracefulShutdown = function () {
+ console.log("Received kill signal, shutting down gracefully.");
+ server.close(() => {
+ console.log("Closed out remaining connections.");
+ process.exit(0)
+ });
+ 
+ // if after
+ setTimeout(function () {
+ console.error("Could not close connections in time, forcefully shutting down");
+ process.exit(1)
+ }, 10 * 1000);
+ };
+ 
+ process.on('SIGTERM', gracefulShutdown);
+ process.on('SIGINT', gracefulShutdown);
+ //*/
