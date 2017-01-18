@@ -8,7 +8,7 @@ export class Server {
     static async start() {
         Server.definition = {};
         const parser      = new Parser();
-        
+
         app.get('/', async(req, res) => {
             try {
                 res.json(this.definition);
@@ -17,14 +17,14 @@ export class Server {
                 console.error(e);
             }
         });
-        
+
         app.get('/refresh', async(req, res) => {
             Server.definition = await parser.getDefinition();
             res.redirect('/')
         });
-        
-        Server.definition = await parser.getDefiition();
-        
+
+        Server.definition = await parser.getDefinition();
+
         return [app.listen(port, () => console.log(`Listening on http://localhost:${port}`)), parser];
     }
 }
