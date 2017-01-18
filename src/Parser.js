@@ -7,8 +7,8 @@ export default class Parser {
     definition = {
         baseUri:    'https://discordapp.com/api',
         version:    1,
-        operations: Parser.getCustomOperations(),
-        models:     Parser.getCustomModels()
+        operations: require('../custom/operations.json'),
+        models:     require('../custom/models.json')
     };
     
     categories = ['channel', 'guild', 'invite', 'user', 'voice', 'webhook'];
@@ -17,16 +17,17 @@ export default class Parser {
     async getDefinition() {
         for (let category of this.categories.concat(this.topics)) {
             try {
-                const document             = await this.getCategory(category);
-                this.definition.operations = Object.assign(
+                const document = await this.getCategory(category);
+                
+                this.definition.operations[category] = Object.assign(
                     {},
-                    this.definition.operations,
-                    {[category]: await this.getOperations(category, document)}
+                    this.definition.operations[category],
+                    await this.getOperations(category, document)
                 );
-                this.definition.models     = Object.assign(
+                this.definition.models[category]     = Object.assign(
                     {},
-                    this.definition.models,
-                    {[category]: await this.getModels(category, document)}
+                    this.definition.models[category],
+                    await this.getModels(category, document)
                 );
             } catch (e) {
                 console.error(`Error with ${category}:`);
@@ -162,9 +163,9 @@ export default class Parser {
         if (!table) {
             return parameters;
         }
-    
+        
         const headers = table.find('thead').find('th').map((index, x) => $(x).text()).get();
-    
+        
         table.find('tbody > tr').each((index, element) => {
             const tr  = $(element),
                   tds = tr.find('td');
@@ -187,31 +188,5 @@ export default class Parser {
     
     static getTypeOfParameter(parameter) {
         return snowflakes.indexOf(parameter) >= 0 ? 'snowflake' : 'string';
-    }
-    
-    static getCustomOperations() {
-        return {
-            guild: {
-                updateNick: {
-                    "category":      "guild",
-                    "name":          "Update Current Users' Nickname",
-                    "description":   "Updates the bots nickname in a server",
-                    "method":        "PATCH",
-                    "responseNote":  "Returns the nick",
-                    "responseTypes": [],
-                    "url":           "/guilds/{guild.id}/members/@me/nick",
-                    "parameters":    {
-                        "guild.id": {
-                            "type":     "snowflake",
-                            "location": "uri"
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    static getCustomModels() {
-        return {};
     }
 }
