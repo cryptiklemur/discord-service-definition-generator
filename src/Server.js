@@ -23,7 +23,7 @@ export class Server {
             res.redirect('/')
         });
         
-        Server.definition = await parser.getDefinition();
+        Server.definition = await parser.getDefiition();
         
         return [app.listen(port, () => console.log(`Listening on http://localhost:${port}`)), parser];
     }

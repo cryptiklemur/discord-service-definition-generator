@@ -7,8 +7,8 @@ export default class Parser {
     definition = {
         baseUri:    'https://discordapp.com/api',
         version:    1,
-        operations: [],
-        models:     []
+        operations: Parser.getCustomOperations(),
+        models:     Parser.getCustomModels()
     };
     
     categories = ['channel', 'guild', 'invite', 'user', 'voice', 'webhook'];
@@ -187,5 +187,31 @@ export default class Parser {
     
     static getTypeOfParameter(parameter) {
         return snowflakes.indexOf(parameter) >= 0 ? 'snowflake' : 'string';
+    }
+    
+    static getCustomOperations() {
+        return {
+            guild: {
+                updateNick: {
+                    "category":      "guild",
+                    "name":          "Update Current Users' Nickname",
+                    "description":   "Updates the bots nickname in a server",
+                    "method":        "PATCH",
+                    "responseNote":  "Returns the nick",
+                    "responseTypes": [],
+                    "url":           "/guilds/{guild.id}/members/@me/nick",
+                    "parameters":    {
+                        "guild.id": {
+                            "type":     "snowflake",
+                            "location": "uri"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    static getCustomModels() {
+        return {};
     }
 }
