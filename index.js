@@ -1,5 +1,5 @@
 require('babel-register');
-const {Server} = require('./src/server');
+const {Server} = require('./src/Server');
 
 Server.start().then(([server]) => {
     const gracefulShutdown = function (nodemon = false) {
