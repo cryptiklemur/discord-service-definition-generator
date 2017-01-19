@@ -107,7 +107,7 @@ export default class Parser {
             
             let match = regex.exec(url);
             while (match !== null) {
-                parameters[match[1]] = {type: Parser.getTypeOfParameter(match[1]), location: 'uri'};
+                parameters[match[1]] = {type: Parser.getTypeOfParameter(match[1]), location: 'uri', required: true};
                 match                = regex.exec(url);
             }
             
