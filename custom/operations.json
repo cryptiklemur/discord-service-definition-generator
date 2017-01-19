@@ -7,13 +7,9 @@
             "method":        "PATCH",
             "responseNote":  "Returns the nick",
             "responseTypes": [],
-            "url":           "/guilds/{guild.id}/members/{member.id}/nick",
+            "url":           "/guilds/{guild.id}/members/@me/nick",
             "parameters":    {
                 "guild.id": {
-                    "type":     "snowflake",
-                    "location": "uri"
-                },
-                "member.id": {
                     "type":     "snowflake",
                     "location": "uri"
                 },
