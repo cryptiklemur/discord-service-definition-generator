@@ -179,7 +179,7 @@ export default class Parser {
                 type:        row.Type.indexOf('array') >= 0 ? 'array' : row.Type,
                 description: row.Description,
                 default:     row.Default,
-                required:    row.required
+                required:    row.required === 'true'
             });
         });
         
