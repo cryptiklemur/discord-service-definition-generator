@@ -65,7 +65,7 @@ export default class Parser {
                 items.append($(e));
             }).get();
             
-            const key        = operation.find('.http-req-title').attr('id').replace('/', 'Or').replace(/-([a-z])/g, g => g[1].toUpperCase()),
+            const key        = Parser.normalizeKey(operation.find('.http-req-title').attr('id')),
                   name       = operation.find('.http-req-title').text(),
                   desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined,
                   method     = operation.find('.http-req-verb').text().split('/')[0],
@@ -188,5 +188,9 @@ export default class Parser {
     
     static getTypeOfParameter(parameter) {
         return snowflakes.indexOf(parameter) >= 0 ? 'snowflake' : 'string';
+    }
+    
+    static normalizeKey(key) {
+        return key.replace('\'', '').replace('/', 'Or').replace(/-([a-z])/g, g => g[1].toUpperCase())
     }
 }
