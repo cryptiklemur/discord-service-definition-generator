@@ -65,7 +65,7 @@ export default class Parser {
                 items.append($(e));
             }).get();
             
-            const key        = operation.find('.http-req-title').attr('id').replace(/-([a-z])/g, g => g[1].toUpperCase()),
+            const key        = operation.find('.http-req-title').attr('id').replace('/', 'Or').replace(/-([a-z])/g, g => g[1].toUpperCase()),
                   name       = operation.find('.http-req-title').text(),
                   desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined,
                   method     = operation.find('.http-req-verb').text().split('/')[0],
