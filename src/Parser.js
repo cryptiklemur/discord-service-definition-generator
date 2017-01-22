@@ -5,8 +5,8 @@ export const snowflakes = ['channel.id', 'guild.id', 'message.id', 'user.id'];
 
 export default class Parser {
     definition = {
-        baseUri:    'https://discordapp.com/api',
-        version:    1,
+        baseUri:    'https://discordapp.com/api/v6',
+        version:    6,
         operations: require('../custom/operations.json'),
         models:     require('../custom/models.json')
     };
