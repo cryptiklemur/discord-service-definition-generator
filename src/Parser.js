@@ -186,7 +186,7 @@ export default class Parser {
             
             parameters[row.Field.replace('*', '')] = Object.assign({}, baseObject, {
                 type:        Parser.normalizePropertyType(row.Type),
-                nullable:    row.Type.indexOf('?') >= 0,
+                nullable:    row.Type.indexOf('?') >= 0 ? true : undefined,
                 description: row.Description,
                 default:     row.Default,
                 required:    row.required === 'true'
