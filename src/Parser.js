@@ -1,7 +1,7 @@
 import request from "request-promise";
 import cheerio from "cheerio";
 
-export const snowflakes = ['channel.id', 'guild.id', 'message.id', 'user.id'];
+export const snowflakes = ['channel.id', 'guild.id', 'message.id', 'user.id', 'webhook.id'];
 
 export default class Parser {
     definition = {
