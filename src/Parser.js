@@ -184,7 +184,7 @@ export default class Parser {
                 row[header] = $(tds[i]).text();
             });
             
-            parameters[row.Field] = Object.assign({}, baseObject, {
+            parameters[row.Field.replace('*', '')] = Object.assign({}, baseObject, {
                 type:        Parser.normalizePropertyType(row.Type),
                 description: row.Description,
                 default:     row.Default,
