@@ -186,6 +186,7 @@ export default class Parser {
             
             parameters[row.Field.replace('*', '')] = Object.assign({}, baseObject, {
                 type:        Parser.normalizePropertyType(row.Type),
+                nullable:    row.Type.indexOf('?') >= 0,
                 description: row.Description,
                 default:     row.Default,
                 required:    row.required === 'true'
@@ -198,7 +199,7 @@ export default class Parser {
     static normalizePropertyType(type) {
         switch (true) {
             default:
-                return type;
+                return type.replace('?', '');
             case type.indexOf('array') >= 0:
                 return 'array';
             case type.indexOf('object') >= 0:
