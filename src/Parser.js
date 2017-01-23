@@ -31,8 +31,8 @@ export default class Parser {
         
         for (let category of this.categories.concat(this.topics)) {
             try {
-                const document                   = await this.getCategory(category);
-            
+                const document = await this.getCategory(category);
+                
                 this.definition.operations[category] = Object.assign(
                     {},
                     await this.getOperations(category, document),
@@ -79,7 +79,7 @@ export default class Parser {
                   desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined,
                   method     = operation.find('.http-req-verb').text().split('/')[0],
                   url        = operation.find('.http-req-url').text().replace(meRegex, '/@me'),
-                  parameters = this.getTable($, '#json-params', items, {location: 'json'});
+                  parameters = this.getTable($, items, {location: 'json'});
             
             let responseNote  = undefined,
                 responseTypes = [],
@@ -116,7 +116,7 @@ export default class Parser {
             
             let match = regex.exec(url);
             while (match !== null) {
-                parameters[match[1]] = {type: Parser.getTypeOfParameter(match[1]), location: 'uri', required: true};
+                parameters[match[1]] = {type: match[1], location: 'uri', required: true};
                 match                = regex.exec(url);
             }
             
@@ -152,7 +152,7 @@ export default class Parser {
             }).get();
             
             const description = items.children().eq(0).is('span') ? items.children().eq(0).text() : '',
-                  properties  = this.getTable($, 'h6[id$=-structure]', items);
+                  properties  = this.getTable($, items);
             
             models[key] = {
                 category,
@@ -165,7 +165,7 @@ export default class Parser {
         return models;
     }
     
-    getTable($, type, items, baseObject = {}) {
+    getTable($, items, baseObject = {}) {
         const parameters = {},
               table      = items.find('table').eq(0);
         
@@ -204,10 +204,6 @@ export default class Parser {
             case type.indexOf('object') >= 0:
                 return 'object';
         }
-    }
-    
-    static getTypeOfParameter(parameter) {
-        return snowflakes.indexOf(parameter) >= 0 ? 'snowflake' : 'string';
     }
     
     static normalizeKey(key) {
