@@ -116,7 +116,7 @@ export default class Parser {
             
             let match = regex.exec(url);
             while (match !== null) {
-                parameters[match[1]] = {type: match[1], location: 'uri', required: true};
+                parameters[match[1]] = {type: Parser.getTypeOfUriParameter(match[1]), location: 'uri', required: true};
                 match                = regex.exec(url);
             }
             
@@ -204,6 +204,10 @@ export default class Parser {
             case type.indexOf('object') >= 0:
                 return 'object';
         }
+    }
+    
+    static getTypeOfUriParameter(parameter) {
+        return snowflakes.indexOf(parameter) >= 0 ? 'snowflake' : 'string';
     }
     
     static normalizeKey(key) {
