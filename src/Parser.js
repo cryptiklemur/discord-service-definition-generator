@@ -17,17 +17,26 @@ export default class Parser {
     async getDefinition() {
         for (let category of this.categories.concat(this.topics)) {
             try {
-                const document = await this.getCategory(category);
-                
+                const document                   = await this.getCategory(category);
+                this.definition.models[category] = Object.assign(
+                    {},
+                    await this.getModels(category, document),
+                    this.definition.models[category]
+                );
+            } catch (e) {
+                console.error(`Error with ${category}:`);
+                console.error(e);
+            }
+        }
+        
+        for (let category of this.categories.concat(this.topics)) {
+            try {
+                const document                   = await this.getCategory(category);
+            
                 this.definition.operations[category] = Object.assign(
                     {},
-                    this.definition.operations[category],
-                    await this.getOperations(category, document)
-                );
-                this.definition.models[category]     = Object.assign(
-                    {},
-                    this.definition.models[category],
-                    await this.getModels(category, document)
+                    await this.getOperations(category, document),
+                    this.definition.operations[category]
                 );
             } catch (e) {
                 console.error(`Error with ${category}:`);
@@ -176,7 +185,7 @@ export default class Parser {
             });
             
             parameters[row.Field] = Object.assign({}, baseObject, {
-                type:        row.Type.indexOf('array') >= 0 ? 'array' : row.Type,
+                type:        Parser.normalizePropertyType(row.Type),
                 description: row.Description,
                 default:     row.Default,
                 required:    row.required === 'true'
@@ -184,6 +193,17 @@ export default class Parser {
         });
         
         return parameters;
+    }
+    
+    static normalizePropertyType(type) {
+        switch (true) {
+            default:
+                return type;
+            case type.indexOf('array') >= 0:
+                return 'array';
+            case type.indexOf('object') >= 0:
+                return 'object';
+        }
     }
     
     static getTypeOfParameter(parameter) {
