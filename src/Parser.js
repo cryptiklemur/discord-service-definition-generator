@@ -79,7 +79,7 @@ export default class Parser {
                   desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined,
                   method     = operation.find('.http-req-verb').text().split('/')[0],
                   url        = operation.find('.http-req-url').text().replace(meRegex, '/@me'),
-                  parameters = this.getTable($, items, {location: 'json'});
+                  parameters = this.getTable($, items, {location: method.toLowerCase() === 'get' ? 'query' : 'json'});
             
             let responseNote  = undefined,
                 responseTypes = [],
