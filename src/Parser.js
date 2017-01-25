@@ -184,11 +184,13 @@ export default class Parser {
                 row[header] = $(tds[i]).text();
             });
             
+            const type = Parser.normalizePropertyType(row.Type);
+            
             parameters[row.Field.replace('*', '')] = Object.assign({}, baseObject, {
-                type:        Parser.normalizePropertyType(row.Type),
+                type:        type,
                 nullable:    row.Type.indexOf('?') >= 0 ? true : undefined,
                 description: row.Description,
-                default:     row.Default,
+                default:     type === 'integer' ? parseInt(row.Default) : row.Default,
                 required:    row.required === 'true'
             });
         });
