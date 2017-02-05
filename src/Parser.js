@@ -186,16 +186,29 @@ export default class Parser {
             
             const type = Parser.normalizePropertyType(row.Type);
             
+            
             parameters[row.Field.replace('*', '')] = Object.assign({}, baseObject, {
                 type:        type,
                 nullable:    row.Type.indexOf('?') >= 0 ? true : undefined,
                 description: row.Description,
-                default:     type === 'integer' ? parseInt(row.Default) : row.Default,
+                default:     Parser.getDefaultForType(type, row.Default),
                 required:    row.required === 'true'
             });
         });
         
         return parameters;
+    }
+    
+    static getDefaultForType(type, defaultValue) {
+        if (type === 'integer') {
+            return parseInt(defaultValue);
+        }
+        
+        if (type === 'bool' || type === 'boolean') {
+            return defaultValue === 'true';
+        }
+        
+        return defaultValue;
     }
     
     static normalizePropertyType(type) {
