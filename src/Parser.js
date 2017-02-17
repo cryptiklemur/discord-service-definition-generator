@@ -78,9 +78,16 @@ export default class Parser {
                   name       = operation.find('.http-req-title').text(),
                   desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined,
                   method     = operation.find('.http-req-verb').text().split('/')[0],
-                  url        = operation.find('.http-req-url').text().replace(meRegex, '/@me'),
-                  parameters = this.getTable($, items, {location: method.toLowerCase() === 'get' ? 'query' : 'json'});
-            
+                  url        = operation.find('.http-req-url').text().replace(meRegex, '/@me');
+                  
+            let parameters = {};
+            let match = regex.exec(url);
+            while (match !== null) {
+                parameters[match[1]] = {type: Parser.getTypeOfUriParameter(match[1]), location: 'uri', required: true};
+                match                = regex.exec(url);
+            }
+            parameters = Object.assign({}, parameters, this.getTable($, items));
+    
             let responseNote  = undefined,
                 responseTypes = [],
                 description   = '';
@@ -114,13 +121,6 @@ export default class Parser {
                 }
             }
             
-            let match = regex.exec(url);
-            while (match !== null) {
-                parameters[match[1]] = {type: Parser.getTypeOfUriParameter(match[1]), location: 'uri', required: true};
-                match                = regex.exec(url);
-            }
-            
-            //console.log(name + ": " + url);
             operations[key] = {
                 category,
                 name,
@@ -166,33 +166,38 @@ export default class Parser {
     }
     
     getTable($, items, baseObject = {}) {
-        const parameters = {},
-              table      = items.find('table').eq(0);
+        const parameters = {};
+        const tables = items.find('table');
+        tables.each((index, table) => {
+            table = $(table);
+            const type = table.prev('h6').attr('id');
+            if (type.indexOf('params') === -1) {
+                return;
+            }
+            
+            let location = type.indexOf('query') >= 0 ? 'query' : 'json';
+            const headers = table.find('thead').find('th').map((index, x) => $(x).text()).get();
+    
+            table.find('tbody > tr').each((index, element) => {
+                const tr  = $(element),
+                      tds = tr.find('td');
         
-        if (!table) {
-            return parameters;
-        }
+                let row = {};
+                headers.forEach((header, i) => {
+                    row[header] = $(tds[i]).text();
+                });
         
-        const headers = table.find('thead').find('th').map((index, x) => $(x).text()).get();
+                const type = Parser.normalizePropertyType(row.Type);
         
-        table.find('tbody > tr').each((index, element) => {
-            const tr  = $(element),
-                  tds = tr.find('td');
-            
-            let row = {};
-            headers.forEach((header, i) => {
-                row[header] = $(tds[i]).text();
-            });
-            
-            const type = Parser.normalizePropertyType(row.Type);
-            
-            
-            parameters[row.Field.replace('*', '')] = Object.assign({}, baseObject, {
-                type:        type,
-                nullable:    row.Type.indexOf('?') >= 0 ? true : undefined,
-                description: row.Description,
-                default:     Parser.getDefaultForType(type, row.Default),
-                required:    row.required === 'true'
+        
+                parameters[row.Field.replace('*', '')] = Object.assign({}, baseObject, {
+                    location,
+                    type,
+                    nullable:    row.Type.indexOf('?') >= 0 ? true : undefined,
+                    description: row.Description,
+                    default:     Parser.getDefaultForType(type, row.Default),
+                    required:    row.required === 'true'
+                });
             });
         });
         
