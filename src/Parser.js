@@ -1,7 +1,12 @@
 import request from "request-promise";
 import cheerio from "cheerio";
+import marked from "marked";
+import path from "path";
+import fs from "fs";
+import mkdirp from "mkdirp";
 
 export const snowflakes = ['channel.id', 'guild.id', 'message.id', 'user.id', 'webhook.id'];
+const baseUrl           = "https://raw.githubusercontent.com/hammerandchisel/discord-api-docs/master/docs";
 
 export default class Parser {
     definition = {
@@ -11,13 +16,24 @@ export default class Parser {
         models:     require('../custom/models.json')
     };
     
-    categories = ['channel', 'guild', 'invite', 'user', 'voice', 'webhook'];
-    topics     = ['gateway', 'oauth2',];
+    categories = ['Channel', 'Guild', 'Invite', 'User', 'Voice', 'Webhook'];
+    topics     = ['Gateway', 'OAuth2'];
+    
+    static getUrl(url) {
+        const regex = /{([^#]+)#[^}]+}+/;
+        for (let i = 1, m = regex.exec(url); m !== null; i++, m = regex.exec(url)) {
+            url = url.replace(m[0], '{' + m[1] + '}');
+        }
+        
+        return url;
+    }
     
     async getDefinition() {
         for (let category of this.categories.concat(this.topics)) {
             try {
-                const document                   = await this.getCategory(category);
+                const document = await this.getCategory(category);
+                category       = category.toLowerCase();
+                
                 this.definition.models[category] = Object.assign(
                     {},
                     await this.getModels(category, document),
@@ -32,6 +48,7 @@ export default class Parser {
         for (let category of this.categories.concat(this.topics)) {
             try {
                 const document = await this.getCategory(category);
+                category       = category.toLowerCase();
                 
                 this.definition.operations[category] = Object.assign(
                     {},
@@ -50,44 +67,84 @@ export default class Parser {
     async getCategory(category) {
         let type = this.topics.indexOf(category) === -1 ? 'resources' : 'topics';
         
-        const options = {
-            uri:       `https://discordapp.com/developers/docs/${type}/${category}`,
-            transform: function (body) {
-                return cheerio.load(body);
-            }
-        };
+        let dir  = path.join(__dirname, '..', 'cache', type);
+        let file = path.join(dir, category + ".html");
+        mkdirp.sync(dir);
         
-        return await request(options)
+        try {
+            return cheerio.load(fs.readFileSync(file));
+        } catch (error) {
+            // https://raw.githubusercontent.com/hammerandchisel/discord-api-docs/master/docs/resources/Channel.md
+            let response = await request({
+                uri:       `${baseUrl}/${type}/${category}.md`,
+                transform: body => cheerio.load(marked(body))
+            });
+            
+            fs.writeFileSync(file, response.html());
+            
+            return response;
+        }
     }
     
-    async getOperations(category, $) {
-        const operations = {},
-              regex      = /{([A-Za-z0-9\.]+)}/g,
-              meRegex    = /\[email\sprotected.*$/g;
+    async getModels(category, $) {
+        const models = {};
         
-        $('.http-req').each((index, element) => {
-            const operation = $(element),
-                  temp      = cheerio.load("<div class='temp'></div>"),
-                  items     = temp('.temp');
+        $('h2[id$=-object],h3[id$=-object]').each((index, element) => {
+            const model = $(element),
+                  key   = model.attr('id').replace('-object', '').replace(/-([a-z])/g, g => g[1].toUpperCase()),
+                  type  = model.type,
+                  temp  = cheerio.load(`<div class="temp"></div>`),
+                  items = temp('.temp');
             
-            operation.nextUntil('.http-req,h2').map((i, e) => {
+            model.nextUntil(`${type}[id$=-object],h2`).map((i, e) => {
                 items.append($(e));
             }).get();
             
-            const key        = Parser.normalizeKey(operation.find('.http-req-title').attr('id')),
-                  name       = operation.find('.http-req-title').text(),
-                  desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined,
-                  method     = operation.find('.http-req-verb').text().split('/')[0],
-                  url        = operation.find('.http-req-url').text().replace(meRegex, '/@me');
-                  
+            const description = items.children().eq(0).is('p') ? items.children().eq(0).text() : '',
+                  properties  = this.getTable($, items);
+            
+            models[key] = {
+                category,
+                description,
+                type: 'object',
+                properties
+            };
+        });
+        
+        return models;
+    }
+    
+    async getOperations(category, $) {
+        const operations  = {},
+              regex       = /{([A-Za-z0-9\.]+)}/g,
+              headerRegex = /^(.*)\s%\s([A-Z\/]+)\s(.*)$/;
+        
+        $('h2').each((index, element) => {
+            const operation = $(element);
+            const temp      = cheerio.load('<div class="temp"></div>');
+            
+            let headerMatch = headerRegex.exec(operation.text());
+            if (!headerMatch) {
+                //console.log(operation.text() + " DIDNT MATCH " + headerRegex);
+                return;
+            }
+            
+            const items = temp('.temp').append(...operation.nextUntil('h2').map((i, e) => e));
+            
+            const name   = headerMatch[1];
+            const key    = Parser.normalizeKey(name).replace('-(deprecated)', '');
+            const method = headerMatch[2].split('/')[0];
+            const desc   = items.find('p').length > 0 ? items.find('p').eq(0) : undefined;
+            const url    = Parser.getUrl(headerMatch[3]);
+            
             let parameters = {};
-            let match = regex.exec(url);
+            let match      = regex.exec(url);
             while (match !== null) {
                 parameters[match[1]] = {type: Parser.getTypeOfUriParameter(match[1]), location: 'uri', required: true};
                 match                = regex.exec(url);
             }
             parameters = Object.assign({}, parameters, this.getTable($, items));
-    
+            
             let responseNote  = undefined,
                 responseTypes = [],
                 description   = '';
@@ -114,7 +171,7 @@ export default class Parser {
                             
                             responseTypes.push({
                                 name: $(e).text(),
-                                type: object.replace('-object', '')
+                                type: object.replace('-object', '').replace('DOCS_', '')
                             });
                         });
                     }
@@ -122,13 +179,14 @@ export default class Parser {
             }
             
             operations[key] = {
+                deprecated:    name.indexOf('deprecated') >= 0 ? true : undefined,
                 category,
                 name,
-                description,
                 method,
-                responseNote,
-                responseTypes,
                 url,
+                description,
+                responseNote,
+                responseTypes: responseTypes.length > 0 ? responseTypes : undefined,
                 parameters
             };
         });
@@ -136,68 +194,48 @@ export default class Parser {
         return operations;
     }
     
-    
-    async getModels(category, $) {
-        const models = {};
-        
-        $('h2[id$=-object],h3[id$=-object]').each((index, element) => {
-            const model = $(element),
-                  key   = model.attr('id').replace('-object', '').replace(/-([a-z])/g, g => g[1].toUpperCase()),
-                  type  = model.type,
-                  temp  = cheerio.load("<div class='temp'></div>"),
-                  items = temp('.temp');
-            
-            model.nextUntil(`${type}[id$=-object],h2`).map((i, e) => {
-                items.append($(e));
-            }).get();
-            
-            const description = items.children().eq(0).is('span') ? items.children().eq(0).text() : '',
-                  properties  = this.getTable($, items);
-            
-            models[key] = {
-                category,
-                description,
-                type: 'object',
-                properties
-            };
-        });
-        
-        return models;
-    }
-    
     getTable($, items, baseObject = {}) {
         const parameters = {};
-        const tables = items.find('table');
+        const tables     = items.find('table');
+        
         tables.each((index, table) => {
-            table = $(table);
+            table      = $(table);
             const type = table.prev('h6').attr('id');
-            if (type.indexOf('params') === -1) {
+            if (type.indexOf('structure') === -1 && type.indexOf('params') === -1) {
                 return;
             }
             
-            let location = type.indexOf('query') >= 0 ? 'query' : 'json';
+            let location  = type.indexOf('query') >= 0 ? 'query' : 'json';
             const headers = table.find('thead').find('th').map((index, x) => $(x).text()).get();
-    
+            
             table.find('tbody > tr').each((index, element) => {
                 const tr  = $(element),
                       tds = tr.find('td');
-        
+                
                 let row = {};
                 headers.forEach((header, i) => {
                     row[header] = $(tds[i]).text();
                 });
-        
+                
                 const type = Parser.normalizePropertyType(row.Type);
-        
-        
-                parameters[row.Field.replace('*', '')] = Object.assign({}, baseObject, {
+                
+                const {Field, Type, Description, Default, required} = row;
+                delete row.Field;
+                delete row.Type;
+                delete row.Description;
+                delete row.Default;
+                delete row.required;
+                
+                parameters[Field.replace('*', '')] = Object.assign({}, baseObject, {
                     location,
                     type,
-                    nullable:    row.Type.indexOf('?') >= 0 ? true : undefined,
-                    description: row.Description,
-                    default:     Parser.getDefaultForType(type, row.Default),
-                    required:    row.required === 'true'
+                    nullable:    Type.indexOf('?') >= 0 ? true : undefined,
+                    description: Description,
+                    default:     Parser.getDefaultForType(type, Default),
+                    required:    required === undefined ? undefined : required === 'true',
+                    extra:       Object.keys(row).length > 0 ? row : undefined
                 });
+                
             });
         });
         
@@ -206,7 +244,9 @@ export default class Parser {
     
     static getDefaultForType(type, defaultValue) {
         if (type === 'integer') {
-            return parseInt(defaultValue);
+            let int = parseInt(defaultValue, 10);
+            
+            return isNaN(int) ? undefined : int;
         }
         
         if (type === 'bool' || type === 'boolean') {
@@ -232,6 +272,11 @@ export default class Parser {
     }
     
     static normalizeKey(key) {
-        return key.replace('\'', '').replace('/', 'Or').replace(/-([a-z])/g, g => g[1].toUpperCase())
+        return key
+            .toLowerCase()
+            .replace(/\s/g, '-')
+            .replace('\'', '')
+            .replace('/', 'Or')
+            .replace(/-([a-z])/g, g => g[1].toUpperCase())
     }
 }

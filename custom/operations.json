@@ -2,12 +2,12 @@
     "guild": {
         "updateNick": {
             "category":      "guild",
+            "url":           "/guilds/{guild.id}/members/@me/nick",
+            "method":        "PATCH",
             "name":          "Update Current Users' Nickname",
             "description":   "Updates the bots nickname in a server",
-            "method":        "PATCH",
             "responseNote":  "Returns the nick",
             "responseTypes": [],
-            "url":           "/guilds/{guild.id}/members/@me/nick",
             "parameters":    {
                 "guild.id": {
                     "type":     "snowflake",

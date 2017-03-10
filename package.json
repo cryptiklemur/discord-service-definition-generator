@@ -1,26 +1,29 @@
 {
-    "name": "api-to-service-definition",
-    "version": "1.0.0",
-    "main": "index.js",
-    "license": "MIT",
+    "name":         "api-to-service-definition",
+    "version":      "1.0.0",
+    "main":         "index.js",
+    "license":      "MIT",
     "dependencies": {
-        "babel-cli": "^6.18.0",
-        "babel-plugin-transform-class-properties": "^6.19.0",
+        "babel-cli":                                "^6.18.0",
+        "babel-plugin-transform-class-properties":  "^6.19.0",
         "babel-plugin-transform-decorators-legacy": "^1.3.4",
-        "babel-plugin-transform-runtime": "^6.15.0",
-        "babel-preset-es2015": "^6.18.0",
-        "babel-preset-stage-0": "^6.16.0",
-        "babel-preset-stage-3": "^6.17.0",
-        "babel-register": "^6.18.0",
-        "babel-register-cli": "^3.0.0",
-        "cheerio": "^0.22.0",
-        "express": "^4.14.0",
-        "forever": "^0.15.3",
-        "nodemon": "^1.11.0",
-        "request": "^2.79.0",
-        "request-promise": "^4.1.1"
+        "babel-plugin-transform-runtime":           "^6.15.0",
+        "babel-preset-es2015":                      "^6.18.0",
+        "babel-preset-stage-0":                     "^6.16.0",
+        "babel-preset-stage-3":                     "^6.17.0",
+        "babel-register":                           "^6.18.0",
+        "babel-register-cli":                       "^3.0.0",
+        "cheerio":                                  "^0.22.0",
+        "express":                                  "^4.14.0",
+        "forever":                                  "^0.15.3",
+        "marked":                                   "^0.3.6",
+        "mkdirp":                                   "^0.5.1",
+        "nodemon":                                  "^1.11.0",
+        "request":                                  "^2.79.0",
+        "request-promise":                          "^4.1.1"
     },
-    "scripts": {
-        "start": "forever -c \"./node_modules/.bin/nodemon --exitcrash --harmony\" index.js"
+    "scripts":      {
+        "start": "forever -c \"./node_modules/.bin/nodemon --exitcrash --harmony\" index.js",
+        "once":  "node --harmony index.js"
     }
 }
