@@ -183,7 +183,7 @@ export default class Parser {
             }
             
             operations[key] = {
-                link:          `https://discordapp.com/developers/docs/${categoryType}/${category}#${name.toLowerCase().replace(/\s/g, '-')}`,
+                link:          `https://discordapp.com/developers/docs/${categoryType}/${category}#${name.toLowerCase().replace(/\s/g, '-').replace('(', '').replace(')', '')}`,
                 deprecated:    name.indexOf('deprecated') >= 0 ? true : undefined,
                 category,
                 name,
