@@ -87,6 +87,7 @@ export default class Parser {
     }
     
     async getModels(category, $) {
+        let categoryType = this.topics.indexOf(category) === -1 ? 'resources' : 'topics';
         const models = {};
         
         $('h2[id$=-object],h3[id$=-object]').each((index, element) => {
@@ -104,6 +105,7 @@ export default class Parser {
                   properties  = this.getTable($, items);
             
             models[key] = {
+                link: `https://discordapp.com/developers/docs/${categoryType}/${category}#${model.attr('id')}`,
                 category,
                 description,
                 type: 'object',
@@ -115,6 +117,8 @@ export default class Parser {
     }
     
     async getOperations(category, $) {
+        let categoryType = this.topics.indexOf(category) === -1 ? 'resources' : 'topics';
+        
         const operations  = {},
               regex       = /{([A-Za-z0-9\.]+)}/g,
               headerRegex = /^(.*)\s%\s([A-Z\/]+)\s(.*)$/;
@@ -179,6 +183,7 @@ export default class Parser {
             }
             
             operations[key] = {
+                link:          `https://discordapp.com/developers/docs/${categoryType}/${category}#${name.toLowerCase().replace(/\s/g, '-')}`,
                 deprecated:    name.indexOf('deprecated') >= 0 ? true : undefined,
                 category,
                 name,
