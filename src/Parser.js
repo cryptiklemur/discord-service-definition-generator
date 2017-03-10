@@ -93,13 +93,10 @@ export default class Parser {
         $('h2[id$=-object],h3[id$=-object]').each((index, element) => {
             const model = $(element),
                   key   = model.attr('id').replace('-object', '').replace(/-([a-z])/g, g => g[1].toUpperCase()),
-                  type  = model.type,
-                  temp  = cheerio.load(`<div class="temp"></div>`),
-                  items = temp('.temp');
-            
-            model.nextUntil(`${type}[id$=-object],h2`).map((i, e) => {
-                items.append($(e));
-            }).get();
+                  type  = element.name,
+                  temp  = cheerio.load(`<div class="temp"></div>`);
+    
+            const items = temp('.temp').append(...model.nextUntil(`${type}[id$=-object],h2`).map((i, e) => e));
             
             const description = items.children().eq(0).is('p') ? items.children().eq(0).text() : '',
                   properties  = this.getTable($, items);
@@ -129,7 +126,6 @@ export default class Parser {
             
             let headerMatch = headerRegex.exec(operation.text());
             if (!headerMatch) {
-                //console.log(operation.text() + " DIDNT MATCH " + headerRegex);
                 return;
             }
             
