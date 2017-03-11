@@ -17,7 +17,7 @@ export default class Parser {
     };
     
     categories = ['Channel', 'Guild', 'Invite', 'User', 'Voice', 'Webhook'];
-    topics     = ['Gateway', 'OAuth2'];
+    topics     = ['Gateway', 'OAuth2', 'Permissions'];
     
     static getUrl(url) {
         const regex = /{([^#]+)#[^}]+}+/;
@@ -97,7 +97,7 @@ export default class Parser {
                   temp  = cheerio.load(`<div class="temp"></div>`);
     
             const items = temp('.temp').append(...model.nextUntil(`${type}[id$=-object],h2`).map((i, e) => e));
-            
+    
             const description = items.children().eq(0).is('p') ? items.children().eq(0).text() : '',
                   properties  = this.getTable($, items);
             
@@ -196,6 +196,8 @@ export default class Parser {
     }
     
     getTable($, items, baseObject = {}) {
+        let typeRegex = /(array of )?<a href="#DOCS_(\w+\/[\w-]+)">[\w\s]+<\/a> objects?\s?(id(?:&apos;)s?)?/;
+        
         const parameters = {};
         const tables     = items.find('table');
         
@@ -214,11 +216,26 @@ export default class Parser {
                       tds = tr.find('td');
                 
                 let row = {};
+                let advanced = false;
                 headers.forEach((header, i) => {
-                    row[header] = $(tds[i]).text();
+                    if (header === 'Description') {
+                        let html = $(tds[i]).html();
+                        let match = typeRegex.exec(html);
+                        if (match !== null) {
+                            row.Type = match[3] !== undefined ? 'snowflake' : match[2].toLowerCase();
+                            if (match[1] !== undefined) {
+                                row.Type = `Array<${row.Type}>`;
+                            }
+                            advanced = true;
+                        }
+                    }
+                    
+                    if (row[header] === undefined) {
+                        row[header] = $(tds[i]).text();
+                    }
                 });
                 
-                const type = Parser.normalizePropertyType(row.Type);
+                const type = Parser.normalizePropertyType(row.Type, advanced);
                 
                 const {Field, Type, Description, Default, required} = row;
                 delete row.Field;
@@ -227,14 +244,15 @@ export default class Parser {
                 delete row.Default;
                 delete row.required;
                 
-                parameters[Field.replace('*', '')] = Object.assign({}, baseObject, {
+                
+                parameters[Field.replace('*', '').trim()] = Object.assign({}, baseObject, {
                     location,
                     type,
                     nullable:    Type.indexOf('?') >= 0 ? true : undefined,
                     description: Description,
                     default:     Parser.getDefaultForType(type, Default),
                     required:    required === undefined ? undefined : required === 'true',
-                    extra:       Object.keys(row).length > 0 ? row : undefined
+                    extra:       Object.keys(row).length > 0 ? row : undefined,
                 });
                 
             });
@@ -257,13 +275,13 @@ export default class Parser {
         return defaultValue;
     }
     
-    static normalizePropertyType(type) {
+    static normalizePropertyType(type, advanced = false) {
         switch (true) {
             default:
                 return type.replace('?', '');
-            case type.indexOf('array') >= 0:
+            case !advanced && type.indexOf('array') >= 0:
                 return 'array';
-            case type.indexOf('object') >= 0:
+            case !advanced && type.indexOf('object') >= 0:
                 return 'object';
         }
     }
