@@ -88,16 +88,16 @@ export default class Parser {
     
     async getModels(category, $) {
         let categoryType = this.topics.indexOf(category) === -1 ? 'resources' : 'topics';
-        const models = {};
+        const models     = {};
         
         $('h2[id$=-object],h3[id$=-object]').each((index, element) => {
             const model = $(element),
                   key   = model.attr('id').replace('-object', '').replace(/-([a-z])/g, g => g[1].toUpperCase()),
                   type  = element.name,
                   temp  = cheerio.load(`<div class="temp"></div>`);
-    
+            
             const items = temp('.temp').append(...model.nextUntil(`${type}[id$=-object],h2`).map((i, e) => e));
-    
+            
             const description = items.children().eq(0).is('p') ? items.children().eq(0).text() : '',
                   properties  = this.getTable($, items);
             
@@ -151,9 +151,10 @@ export default class Parser {
             if (desc !== undefined) {
                 
                 // Get description and responseNotes
-                description = desc.text();
-                let regex   = /(Return[^\.]+.)/g;
-                let match   = regex.exec(description);
+                description   = desc.text();
+                let regex     = /(Return[^\.]+.)/g;
+                let listRegex = /Returns a list/g;
+                let match     = regex.exec(description);
                 if (match !== null) {
                     responseNote = match[1];
                     description  = description.replace(regex, '').trim();
@@ -169,9 +170,15 @@ export default class Parser {
                                 return;
                             }
                             
+                            const array = listRegex.test(match[1]);
+                            let type    =
+                                      (array ? 'Array<' : '') +
+                                      object.replace('-object', '').replace('DOCS_', '') +
+                                      (array ? '>' : '');
+                            
                             responseTypes.push({
                                 name: $(e).text(),
-                                type: object.replace('-object', '').replace('DOCS_', '')
+                                type
                             });
                         });
                     }
@@ -215,11 +222,11 @@ export default class Parser {
                 const tr  = $(element),
                       tds = tr.find('td');
                 
-                let row = {};
+                let row      = {};
                 let advanced = false;
                 headers.forEach((header, i) => {
                     if (header === 'Description') {
-                        let html = $(tds[i]).html();
+                        let html  = $(tds[i]).html();
                         let match = typeRegex.exec(html);
                         if (match !== null) {
                             row.Type = match[3] !== undefined ? 'snowflake' : match[2].toLowerCase();
