@@ -278,8 +278,12 @@ export default class Parser {
         if (type === 'bool' || type === 'boolean') {
             return defaultValue === 'true';
         }
-        
+    
         if (type === 'snowflake') {
+            return undefined;
+        }
+        
+        if (defaultValue === 'abset') {
             return undefined;
         }
         
