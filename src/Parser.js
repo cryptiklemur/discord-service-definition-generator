@@ -279,6 +279,10 @@ export default class Parser {
             return defaultValue === 'true';
         }
         
+        if (type === 'snowflake') {
+            return undefined;
+        }
+        
         return defaultValue;
     }
     
