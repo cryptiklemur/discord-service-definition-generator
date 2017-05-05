@@ -144,7 +144,7 @@ export default class Parser {
                 match                = regex.exec(url);
             }
             parameters = Object.assign({}, parameters, this.getTable($, items));
-            
+    
             let responseNote  = undefined,
                 responseTypes = [],
                 description   = '';
@@ -184,6 +184,12 @@ export default class Parser {
                     }
                 }
             }
+    
+            let parametersArray = false;
+            if (/JSON array of parameters/.test(description)) {
+                parametersArray = true;
+            }
+    
             
             operations[key] = {
                 link:          `https://discordapp.com/developers/docs/${categoryType}/${category}#${name.toLowerCase().replace(/\s/g, '-').replace('(', '').replace(')', '')}`,
@@ -195,7 +201,8 @@ export default class Parser {
                 description,
                 responseNote,
                 responseTypes: responseTypes.length > 0 ? responseTypes : undefined,
-                parameters
+                parameters,
+                parametersArray
             };
         });
         
@@ -251,7 +258,6 @@ export default class Parser {
                 delete row.Default;
                 delete row.required;
                 
-                
                 parameters[Field.replace('*', '').trim()] = Object.assign({}, baseObject, {
                     location,
                     type,
@@ -278,12 +284,12 @@ export default class Parser {
         if (type === 'bool' || type === 'boolean') {
             return defaultValue === 'true';
         }
-    
+        
         if (type === 'snowflake') {
             return undefined;
         }
         
-        if (defaultValue === 'abset') {
+        if (defaultValue === 'absent') {
             return undefined;
         }
         
