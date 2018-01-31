@@ -120,22 +120,16 @@ export default class Parser {
               regex       = /{([A-Za-z0-9\.]+)}/g,
               headerRegex = /^(.*)\s%\s([A-Z\/]+)\s(.*)$/;
         
-        $('h2').each((index, element) => {
-            const operation = $(element);
+        $('.http-req').each((index, element) => {
+            const domElement = $(element);
+            const title = domElement.find("h2");
+            const name = title.text();
+            const method = domElement.find(".http-req-verb").text();
+            const url = domElement.find(".http-req-url").text();
             const temp      = cheerio.load('<div class="temp"></div>');
-            
-            let headerMatch = headerRegex.exec(operation.text());
-            if (!headerMatch) {
-                return;
-            }
-            
-            const items = temp('.temp').append(...operation.nextUntil('h2').map((i, e) => e));
-            
-            const name   = headerMatch[1];
+            const items = temp('.temp').append(...domElement.nextUntil('.http-req').map((i, e) => e));
             const key    = Parser.normalizeKey(name).replace('-(deprecated)', '');
-            const method = headerMatch[2].split('/')[0];
-            const desc   = items.find('p').length > 0 ? items.find('p').eq(0) : undefined;
-            const url    = Parser.getUrl(headerMatch[3]);
+            const desc   = items.find('span').length > 0 ? items.find('span').eq(0) : undefined;
             
             let parameters = {};
             let match      = regex.exec(url);
