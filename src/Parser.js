@@ -6,7 +6,7 @@ import fs from "fs";
 import mkdirp from "mkdirp";
 
 export const snowflakes = ['channel.id', 'guild.id', 'message.id', 'user.id', 'webhook.id'];
-const baseUrl           = "https://raw.githubusercontent.com/hammerandchisel/discord-api-docs/master/docs";
+const baseUrl           = "https://discordapp.com/developers/docs";
 
 export default class Parser {
     definition = {
@@ -16,8 +16,8 @@ export default class Parser {
         models:     require('../custom/models.json')
     };
     
-    categories = ['Channel', 'Guild', 'Invite', 'User', 'Voice', 'Webhook'];
-    topics     = ['Gateway', 'OAuth2', 'Permissions'];
+    resources = ['audit-log', 'channel', 'emoji', 'guild', 'invite', 'user', 'voice', 'webhook'];
+    topics    = ['gateway', 'oauth2', 'permissions'];
     
     static getUrl(url) {
         const regex = /{([^#]+)#[^}]+}+/;
@@ -29,34 +29,34 @@ export default class Parser {
     }
     
     async getDefinition() {
-        for (let category of this.categories.concat(this.topics)) {
+        for (let resource of this.resources.concat(this.topics)) {
             try {
-                const document = await this.getCategory(category);
-                category       = category.toLowerCase();
+                const document = await this.getResource(resource);
+                resource       = resource.toLowerCase();
                 
-                this.definition.models[category] = Object.assign(
+                this.definition.models[resource] = Object.assign(
                     {},
-                    await this.getModels(category, document),
-                    this.definition.models[category]
+                    await this.getModels(resource, document),
+                    this.definition.models[resource]
                 );
             } catch (e) {
-                console.error(`Error with ${category}:`);
+                console.error(`Error with ${resource}:`);
                 console.error(e);
             }
         }
         
-        for (let category of this.categories.concat(this.topics)) {
+        for (let resource of this.resources.concat(this.topics)) {
             try {
-                const document = await this.getCategory(category);
-                category       = category.toLowerCase();
+                const document = await this.getResource(resource);
+                resource       = resource.toLowerCase();
                 
-                this.definition.operations[category] = Object.assign(
+                this.definition.operations[resource] = Object.assign(
                     {},
-                    await this.getOperations(category, document),
-                    this.definition.operations[category]
+                    await this.getOperations(resource, document),
+                    this.definition.operations[resource]
                 );
             } catch (e) {
-                console.error(`Error with ${category}:`);
+                console.error(`Error with ${resource}:`);
                 console.error(e);
             }
         }
@@ -64,11 +64,11 @@ export default class Parser {
         return this.definition;
     }
     
-    async getCategory(category) {
-        let type = this.topics.indexOf(category) === -1 ? 'resources' : 'topics';
+    async getResource(resource) {
+        let type = this.topics.indexOf(resource) === -1 ? 'resources' : 'topics';
         
         let dir  = path.join(__dirname, '..', 'cache', type);
-        let file = path.join(dir, category + ".html");
+        let file = path.join(dir, resource + ".html");
         mkdirp.sync(dir);
         
         try {
@@ -76,18 +76,18 @@ export default class Parser {
         } catch (error) {
             // https://raw.githubusercontent.com/hammerandchisel/discord-api-docs/master/docs/resources/Channel.md
             let response = await request({
-                uri:       `${baseUrl}/${type}/${category}.md`,
+                uri:       `${baseUrl}/${type}/${resource}`,
                 transform: body => cheerio.load(marked(body))
             });
             
-            fs.writeFileSync(file, response.html());
+            // fs.writeFileSync(file, response.html());
             
             return response;
         }
     }
     
-    async getModels(category, $) {
-        let categoryType = this.topics.indexOf(category) === -1 ? 'resources' : 'topics';
+    async getModels(resource, $) {
+        let resourceType = this.topics.indexOf(resource) === -1 ? 'resources' : 'topics';
         const models     = {};
         
         $('h2[id$=-object],h3[id$=-object]').each((index, element) => {
@@ -96,14 +96,14 @@ export default class Parser {
                   type  = element.name,
                   temp  = cheerio.load(`<div class="temp"></div>`);
             
-            const items = temp('.temp').append(...model.nextUntil(`${type}[id$=-object],h2`).map((i, e) => e));
+            const items = temp('.temp').append(...model.nextUntil(`${type}[id$=-object],h2,h3`).map((i, e) => e));
             
             const description = items.children().eq(0).is('p') ? items.children().eq(0).text() : '',
                   properties  = this.getTable($, items);
             
             models[key] = {
-                link: `https://discordapp.com/developers/docs/${categoryType}/${category}#${model.attr('id')}`,
-                category,
+                link: `https://discordapp.com/developers/docs/${resourceType}/${resource}#${model.attr('id')}`,
+                resource,
                 description,
                 type: 'object',
                 properties
@@ -113,8 +113,8 @@ export default class Parser {
         return models;
     }
     
-    async getOperations(category, $) {
-        let categoryType = this.topics.indexOf(category) === -1 ? 'resources' : 'topics';
+    async getOperations(resource, $) {
+        let resourceType = this.topics.indexOf(resource) === -1 ? 'resources' : 'topics';
         
         const operations  = {},
               regex       = /{([A-Za-z0-9\.]+)}/g,
@@ -192,9 +192,9 @@ export default class Parser {
     
             
             operations[key] = {
-                link:          `https://discordapp.com/developers/docs/${categoryType}/${category}#${name.toLowerCase().replace(/\s/g, '-').replace('(', '').replace(')', '')}`,
+                link:          `https://discordapp.com/developers/docs/${resourceType}/${resource}#${name.toLowerCase().replace(/\s/g, '-').replace('(', '').replace(')', '')}`,
                 deprecated:    name.indexOf('deprecated') >= 0 ? true : undefined,
-                category,
+                resource,
                 name,
                 method,
                 url,
