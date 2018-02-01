@@ -304,6 +304,8 @@ export default class Parser {
                 return type.replace('?', '');
             case type === "ISO8601 timestamp":
                 return 'integer';
+            case type === "base64 image data":
+                return 'string';
             case !advanced && type.indexOf('array') >= 0:
                 return 'array';
             case !advanced && type.indexOf('object') >= 0:
