@@ -159,7 +159,9 @@ export default class Parser {
                     let match = regex.exec(desc.html());
                     if (match !== null) {
                         cheerio(`<div>${match[1]}</div>`).find('a').each((i, e) => {
-                            let object = $(e).attr('href').split('#')[1];
+                            const href = $(e).attr('href').split("#");
+                            const returnResource = href[0].split('/').reverse()[0];
+                            let object = href[1];
                             if (object.indexOf('-object') === -1) {
                                 return;
                             }
@@ -167,7 +169,7 @@ export default class Parser {
                             const array = listRegex.test(match[1]);
                             let type    =
                                       (array ? 'Array<' : '') +
-                                      resource + "/" + object.replace('-object', '').replace('DOCS_', '') +
+                                      returnResource + "/" + object.replace('-object', '').replace('DOCS_', '') +
                                       (array ? '>' : '');
                             
                             responseTypes.push({
