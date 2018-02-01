@@ -122,14 +122,14 @@ export default class Parser {
         
         $('.http-req').each((index, element) => {
             const domElement = $(element);
-            const title = domElement.find("h2");
-            const name = title.text();
-            const method = domElement.find(".http-req-verb").text();
-            const url = domElement.find(".http-req-url").text();
-            const temp      = cheerio.load('<div class="temp"></div>');
-            const items = temp('.temp').append(...domElement.nextUntil('.http-req').map((i, e) => e));
-            const key    = Parser.normalizeKey(name).replace('-(deprecated)', '');
-            const desc   = items.find('span').length > 0 ? items.find('span').eq(0) : undefined;
+            const title      = domElement.find("h2");
+            const name       = title.text();
+            const method     = domElement.find(".http-req-verb").text();
+            const url        = domElement.find(".http-req-url").text();
+            const temp       = cheerio.load('<div class="temp"></div>');
+            const items      = temp('.temp').append(...domElement.nextUntil('.http-req').map((i, e) => e));
+            const key        = Parser.normalizeKey(name).replace('-(deprecated)', '');
+            const desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined;
             
             let parameters = {};
             let match      = regex.exec(url);
@@ -138,7 +138,7 @@ export default class Parser {
                 match                = regex.exec(url);
             }
             parameters = Object.assign({}, parameters, this.getTable($, items));
-    
+            
             let responseNote  = undefined,
                 responseTypes = [],
                 description   = '';
@@ -159,17 +159,24 @@ export default class Parser {
                     let match = regex.exec(desc.html());
                     if (match !== null) {
                         cheerio(`<div>${match[1]}</div>`).find('a').each((i, e) => {
-                            const href = $(e).attr('href').split("#");
-                            const returnResource = href[0].split('/').reverse()[0];
-                            let object = href[1];
+                            const href         = $(e).attr('href').split("#");
+                            let returnResource = href[0].split('/').reverse()[0];
+                            let object         = href[1];
                             if (object.indexOf('-object') === -1) {
                                 return;
+                            }
+                            
+                            // @todo Remove once https://github.com/discordapp/discord-api-docs/pull/501 is merged
+                            if (key === 'listGuildMembers') {
+                                returnResource = "guild";
+                                object         = "guild-member";
                             }
                             
                             const array = listRegex.test(match[1]);
                             let type    =
                                       (array ? 'Array<' : '') +
-                                      returnResource + "/" + object.replace('-object', '').replace('DOCS_', '') +
+                                      (returnResource ? (returnResource + "/") : "") +
+                                      object.replace('-object', '').replace('DOCS_', '') +
                                       (array ? '>' : '');
                             
                             responseTypes.push({
@@ -180,12 +187,11 @@ export default class Parser {
                     }
                 }
             }
-    
+            
             let parametersArray = false;
             if (/JSON array of parameters/.test(description)) {
                 parametersArray = true;
             }
-    
             
             operations[key] = {
                 link:          `https://discordapp.com/developers/docs/${resourceType}/${resource}#${name.toLowerCase().replace(/\s/g, '-').replace('(', '').replace(')', '')}`,
