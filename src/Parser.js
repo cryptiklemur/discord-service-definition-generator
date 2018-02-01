@@ -167,7 +167,7 @@ export default class Parser {
                             const array = listRegex.test(match[1]);
                             let type    =
                                       (array ? 'Array<' : '') +
-                                      object.replace('-object', '').replace('DOCS_', '') +
+                                      resource + "/" + object.replace('-object', '').replace('DOCS_', '') +
                                       (array ? '>' : '');
                             
                             responseTypes.push({
