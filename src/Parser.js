@@ -147,7 +147,7 @@ export default class Parser {
                 // Get description and responseNotes
                 description   = desc.text();
                 let regex     = /(Return[^\.]+.)/g;
-                let listRegex = /Returns a list/g;
+                let listRegex = /Returns an? (?:list|array)/g;
                 let match     = regex.exec(description);
                 if (match !== null) {
                     responseNote = match[1];
