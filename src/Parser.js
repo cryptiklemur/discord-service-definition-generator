@@ -305,6 +305,7 @@ export default class Parser {
             case type === "ISO8601 timestamp":
                 return 'integer';
             case type === "base64 image data":
+            case type === "avatar data string":
                 return 'string';
             case !advanced && type.indexOf('array') >= 0:
                 return 'array';
