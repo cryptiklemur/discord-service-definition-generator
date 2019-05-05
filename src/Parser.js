@@ -130,7 +130,7 @@ export default class Parser {
             const items      = temp('.temp').append(...domElement.nextUntil('.http-req').map((i, e) => e));
             const key        = Parser.normalizeKey(name).replace('-(deprecated)', '');
             const desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined;
-            
+
             let parameters = {};
             let match      = regex.exec(url);
             while (match !== null) {
@@ -156,9 +156,10 @@ export default class Parser {
                 
                 // Get response types
                 if (responseNote !== undefined) {
-                    let match = regex.exec(desc.html());
-                    if (match !== null) {
-                        cheerio(`<div>${match[1]}</div>`).find('a').each((i, e) => {
+                    let uriRegex = /(Return[^\.]+.+>)/g;
+                    let uriMatch = uriRegex.exec(desc.html());
+                    if (uriMatch !== null) {
+                        cheerio(`<div>${uriMatch[0]}</div>`).find('a').each((i, e) => {
                             const href         = $(e).attr('href').split("#");
                             let returnResource = href[0].split('/').reverse()[0];
                             let object         = href[1];
@@ -172,7 +173,7 @@ export default class Parser {
                                 object         = "guild-member";
                             }
                             
-                            const array = listRegex.test(match[1]);
+                            const array = listRegex.test(uriMatch[0]);
                             let type    =
                                       (array ? 'Array<' : '') +
                                       (returnResource ? (returnResource + "/") : "") +
@@ -220,6 +221,11 @@ export default class Parser {
         tables.each((index, table) => {
             table      = $(table);
             const type = table.prev('h6').attr('id');
+
+            if (type == undefined) {
+                return;
+            }
+
             if (type.indexOf('structure') === -1 && type.indexOf('params') === -1) {
                 return;
             }
@@ -303,7 +309,7 @@ export default class Parser {
             default:
                 return type.replace('?', '');
             case type === "ISO8601 timestamp":
-                return 'integer';
+                return 'ISO8601 timestamp';
             case type === "base64 image data":
             case type === "avatar data string":
                 return 'string';
