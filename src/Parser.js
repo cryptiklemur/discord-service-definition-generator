@@ -4,6 +4,7 @@ import marked from "marked";
 import path from "path";
 import fs from "fs";
 import mkdirp from "mkdirp";
+import puppeteer from 'puppeteer';
 
 export const snowflakes = ['channel.id', 'guild.id', 'message.id', 'user.id', 'webhook.id'];
 const baseUrl           = "https://discordapp.com/developers/docs";
@@ -66,23 +67,27 @@ export default class Parser {
     
     async getResource(resource) {
         let type = this.topics.indexOf(resource) === -1 ? 'resources' : 'topics';
-        
-        let dir  = path.join(__dirname, '..', 'cache', type);
+
+        let dir = path.join(__dirname, '..', 'cache', type);
         let file = path.join(dir, resource + ".html");
         mkdirp.sync(dir);
-        
+
         try {
             return cheerio.load(fs.readFileSync(file));
         } catch (error) {
-            // https://raw.githubusercontent.com/hammerandchisel/discord-api-docs/master/docs/resources/Channel.md
-            let response = await request({
-                uri:       `${baseUrl}/${type}/${resource}`,
-                transform: body => cheerio.load(marked(body))
-            });
-            
-            // fs.writeFileSync(file, response.html());
-            
-            return response;
+            const url = `${baseUrl}/${type}/${resource}`;
+            const browser = await puppeteer.launch();
+
+            const page = await browser.newPage();
+            await page.goto(url);
+            await page.waitForSelector('[class^=contentWrapperInner]')
+
+            const content = await page.content()
+            await browser.close();
+
+            //fs.writeFileSync(file, content);
+
+            return cheerio.load(content);
         }
     }
     
