@@ -138,7 +138,7 @@ export default class Parser {
             const desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined;
             let method       = domElement.find(".http-req-verb").text();
 
-            if (method == 'PUT/PATCH') {
+            if (method === 'PUT/PATCH') {
                 method = 'PATCH';
             }
 
