@@ -131,12 +131,16 @@ export default class Parser {
             const domElement = $(element);
             const title      = domElement.find("h2");
             const name       = title.text();
-            const method     = domElement.find(".http-req-verb").text();
             const url        = domElement.find(".http-req-url").text();
             const temp       = cheerio.load('<div class="temp"></div>');
             const items      = temp('.temp').append(...domElement.nextUntil('.http-req').map((i, e) => e));
             const key        = Parser.normalizeKey(name).replace('-(deprecated)', '');
             const desc       = items.find('span').length > 0 ? items.find('span').eq(0) : undefined;
+            let method       = domElement.find(".http-req-verb").text();
+
+            if (method == 'PUT/PATCH') {
+                method = 'PATCH';
+            }
 
             let parameters = {};
             let match      = regex.exec(url);
