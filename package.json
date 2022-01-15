@@ -16,7 +16,7 @@
         "cheerio":                                  "^0.22.0",
         "express":                                  "^4.14.0",
         "forever":                                  "^0.15.3",
-        "marked":                                   "^0.3.6",
+        "marked":                                   "^4.0.10",
         "mkdirp":                                   "^0.5.1",
         "nodemon":                                  "^1.11.0",
         "puppeteer":                                "^1.15.0",
