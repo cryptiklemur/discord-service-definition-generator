@@ -14,7 +14,7 @@
         "babel-register":                           "^6.18.0",
         "babel-register-cli":                       "^3.0.0",
         "cheerio":                                  "^0.22.0",
-        "express":                                  "^4.14.0",
+        "express":                                  "^4.17.3",
         "forever":                                  "^0.15.3",
         "marked":                                   "^0.3.6",
         "mkdirp":                                   "^0.5.1",
